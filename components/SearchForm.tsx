@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 type Props = {
   onResults: (data: any) => void;
   onError: (msg: string) => void;
@@ -9,12 +9,14 @@ export function SearchForm({ onResults, onError, setLoading }: Props) {
   const [tripType, setTripType] = useState<'one-way' | 'return'>('one-way');
   const [from, setFrom] = useState('LHR');
   const [to, setTo] = useState('JFK');
-  const [depDate, setDepDate] = useState('');
-  const [retDate, setRetDate] = useState('');
+  const depRef = useRef<HTMLInputElement>(null);
+  const retRef = useRef<HTMLInputElement>(null);
   const [adults, setAdults] = useState(1);
   const [cabin, setCabin] = useState('economy');
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    const depDate = depRef.current?.value ?? '';
+    const retDate = retRef.current?.value ?? '';
     setLoading(true);
     try {
       const slices = [
@@ -41,7 +43,6 @@ export function SearchForm({ onResults, onError, setLoading }: Props) {
   const input = 'rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none';
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {/* Trip type tabs */}
       <div className="flex gap-2">
         {(['one-way', 'return'] as const).map((t) => (
           <button key={t} type="button" onClick={() => setTripType(t)}
@@ -63,12 +64,12 @@ export function SearchForm({ onResults, onError, setLoading }: Props) {
         </div>
         <div className="flex flex-col gap-1">
           <label className="text-xs font-medium text-slate-400">Departure</label>
-          <input id="depDate" required type="date" value={depDate} onChange={(e) => setDepDate(e.target.value)} className={input} />
+          <input id="depDate" ref={depRef} required type="date" defaultValue="" className={input} />
         </div>
         {tripType === 'return' && (
           <div className="flex flex-col gap-1">
             <label className="text-xs font-medium text-slate-400">Return</label>
-            <input id="retDate" type="date" value={retDate} onChange={(e) => setRetDate(e.target.value)} className={input} />
+            <input id="retDate" ref={retRef} type="date" defaultValue="" className={input} />
           </div>
         )}
       </div>
