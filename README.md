@@ -142,7 +142,7 @@ Switch `DUFFEL_ACCESS_TOKEN` to `duffel_live_...` when going live.
 - [ ] Airport autocomplete (IATA code search)
 - [ ] Prisma schema for saved searches + price alerts
 - [ ] Price alert cron job (Resend emails)
-- [ ] Booking flow (Duffel Orders API)
+- [x] Booking flow (Duffel Orders API) ✅
 - [ ] Multi-city search
 - [ ] Seat map preview
 - [ ] Stripe payment integration
@@ -150,3 +150,18 @@ Switch `DUFFEL_ACCESS_TOKEN` to `duffel_live_...` when going live.
 ## License
 
 MIT
+
+
+## Testing (Test Mode)
+
+The app runs in Duffel test mode by default. Use these test credentials when booking:
+
+| Field | Test Value |
+|-------|------------|
+| Phone | `+14155550123` |
+| Passport | `P12345678` (any format) |
+| Nationality | `GB` (ISO 2-letter code) |
+| DOB | Any valid past date |
+| Passport Expiry | Any future date |
+
+> **Note:** In test mode, no real booking is made. Duffel's sandbox returns a real booking reference (e.g. `FBH3NZ`) and order ID for testing the full flow.
