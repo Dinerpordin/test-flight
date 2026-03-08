@@ -1,13 +1,10 @@
 'use client';
-
 import { useState } from 'react';
-
 type Props = {
   onResults: (data: any) => void;
   onError: (msg: string) => void;
   setLoading: (v: boolean) => void;
 };
-
 export function SearchForm({ onResults, onError, setLoading }: Props) {
   const [tripType, setTripType] = useState<'one-way' | 'return'>('one-way');
   const [from, setFrom] = useState('LHR');
@@ -16,7 +13,6 @@ export function SearchForm({ onResults, onError, setLoading }: Props) {
   const [retDate, setRetDate] = useState('');
   const [adults, setAdults] = useState(1);
   const [cabin, setCabin] = useState('economy');
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
@@ -42,9 +38,7 @@ export function SearchForm({ onResults, onError, setLoading }: Props) {
       setLoading(false);
     }
   }
-
   const input = 'rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none';
-
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {/* Trip type tabs */}
@@ -69,12 +63,12 @@ export function SearchForm({ onResults, onError, setLoading }: Props) {
         </div>
         <div className="flex flex-col gap-1">
           <label className="text-xs font-medium text-slate-400">Departure</label>
-          <input required type="date" value={depDate} onChange={(e) => setDepDate(e.target.value)} className={input} />
+          <input id="depDate" required type="date" value={depDate} onChange={(e) => setDepDate(e.target.value)} className={input} />
         </div>
         {tripType === 'return' && (
           <div className="flex flex-col gap-1">
             <label className="text-xs font-medium text-slate-400">Return</label>
-            <input type="date" value={retDate} onChange={(e) => setRetDate(e.target.value)} className={input} />
+            <input id="retDate" type="date" value={retDate} onChange={(e) => setRetDate(e.target.value)} className={input} />
           </div>
         )}
       </div>
