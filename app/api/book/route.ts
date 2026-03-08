@@ -8,7 +8,7 @@ const duffel = new Duffel({
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { offerId, passenger, totalAmount, totalCurrency } = body;
+    const { offerId, passenger } = body;
 
     if (!offerId || !passenger) {
       return NextResponse.json(
@@ -17,11 +17,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Step 1: Fetch the offer to get the real passenger ID
+    // Step 1: Fetch the offer to get the real passenger ID AND current total amount
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const offerRes = await (duffel.offers as any).get(offerId);
     const offerData = offerRes.data;
     const passengerId = offerData.passengers?.[0]?.id;
+    // Use the offer's actual total amount and currency (not client-provided)
+    const totalAmount = offerData.total_amount;
+    const totalCurrency = offerData.total_currency;
 
     if (!passengerId) {
       return NextResponse.json(
@@ -30,7 +33,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Step 2: Create the order with the real passenger ID
+    // Step 2: Create the order using the offer's exact total amount
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const order = await (duffel.orders as any).create({
       selected_offers: [offerId],
@@ -40,7 +43,7 @@ export async function POST(req: NextRequest) {
       }],
       payments: [{
         type: 'balance',
-        currency: totalCurrency || 'GBP',
+        currency: totalCurrency,
         amount: totalAmount,
       }],
       type: 'instant',
@@ -56,12 +59,11 @@ export async function POST(req: NextRequest) {
 
   } catch (error: unknown) {
     console.error('[/api/book]', error);
-    // Extract detailed Duffel error if available
     let message = 'Booking failed';
     if (error instanceof Error) {
       message = error.message;
     }
-    // Duffel SDK wraps errors — try to get the errors array
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const duffelErr = error as any;
     if (duffelErr?.errors?.length) {
       message = duffelErr.errors.map((e: any) => e.message).join('; ');
