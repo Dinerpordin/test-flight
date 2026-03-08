@@ -21,14 +21,12 @@ export default function Home() {
   }
 
   function handleSelect(offer: any) {
-    // Store the full offer in sessionStorage so the booking page can read it
     sessionStorage.setItem('selectedOffer', JSON.stringify(offer));
     router.push(`/book/${offer.id}`);
   }
 
   return (
     <main className="min-h-screen bg-slate-950 text-white">
-      {/* Hero / Search section */}
       <section className="px-4 py-12">
         <div className="max-w-5xl mx-auto space-y-6">
           <div className="text-center">
@@ -45,28 +43,24 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Loading */}
       {loading && (
         <div className="flex justify-center py-16">
           <div className="h-10 w-10 animate-spin rounded-full border-4 border-sky-500 border-t-transparent" />
         </div>
       )}
 
-      {/* Error */}
       {error && !loading && (
         <p className="text-center text-red-400 py-8">{error}</p>
       )}
 
-      {/* Results */}
       {results && !loading && (
         <section className="px-4 pb-16">
           <div className="max-w-5xl mx-auto">
-            <ResultsList offers={results.offers} onSelect={handleSelect} />
+            <ResultsList data={results} onSelect={handleSelect} />
           </div>
         </section>
       )}
 
-      {/* Popular routes */}
       {!results && !loading && (
         <section className="px-4 pb-16">
           <div className="max-w-5xl mx-auto">
