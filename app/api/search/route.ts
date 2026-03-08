@@ -1,16 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Duffel } from '@duffel/api';
-import { Redis } from '@upstash/redis';
 
 const duffel = new Duffel({
   token: process.env.DUFFEL_ACCESS_TOKEN!,
 });
 
-const redis = new Redis({
-  url: process.env.REDIS_URL!,
-});
+// Simple in-memory cache (resets on cold starts)
+const cache = new Map<string, { data: unknown; expires: number }>();
+const CACHE_TTL = 600_000; // 10 minutes in ms
 
-const CACHE_TTL = 600; // 10 minutes
+function cacheGet(key: string): unknown | null {
+  const entry = cache.get(key);
+  if (!entry) return null;
+  if (Date.now() > entry.expires) {
+    cache.delete(key);
+    return null;
+  }
+  return entry.data;
+}
+
+function cacheSet(key: string, data: unknown): void {
+  cache.set(key, { data, expires: Date.now() + CACHE_TTL });
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -28,6 +39,7 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+
     if (!passengers || !Array.isArray(passengers) || passengers.length === 0) {
       return NextResponse.json(
         { error: 'passengers is required and must be a non-empty array' },
@@ -37,9 +49,9 @@ export async function POST(req: NextRequest) {
 
     const cacheKey = `flight-search:${JSON.stringify({ slices, passengers, cabinClass })}`;
 
-    const cached = await redis.get(cacheKey);
+    const cached = cacheGet(cacheKey);
     if (cached) {
-      return NextResponse.json({ ...cached as object, cached: true });
+      return NextResponse.json({ ...(cached as object), cached: true });
     }
 
     const offerRequest = await duffel.offerRequests.create({
@@ -50,7 +62,6 @@ export async function POST(req: NextRequest) {
     });
 
     const markup = parseFloat(process.env.MARKUP_PERCENTAGE || '0');
-
     const results = offerRequest.data.offers?.map((offer: any) => {
       const base = parseFloat(offer.total_amount);
       const totalWithMarkup = (base * (1 + markup / 100)).toFixed(2);
@@ -74,7 +85,7 @@ export async function POST(req: NextRequest) {
       cached: false,
     };
 
-    await redis.set(cacheKey, response, { ex: CACHE_TTL });
+    cacheSet(cacheKey, response);
     return NextResponse.json(response);
   } catch (error: any) {
     console.error('[/api/search]', error);
