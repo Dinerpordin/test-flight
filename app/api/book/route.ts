@@ -17,13 +17,26 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Step 1: Create a hold order (no payment yet - Duffel will handle payment)
+    // Step 1: Fetch the offer to get the real passenger ID
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const offerRes = await (duffel.offers as any).get(offerId);
+    const offerData = offerRes.data;
+    const passengerId = offerData.passengers?.[0]?.id;
+
+    if (!passengerId) {
+      return NextResponse.json(
+        { error: 'Could not retrieve passenger ID from offer' },
+        { status: 400 }
+      );
+    }
+
+    // Step 2: Create the order with the real passenger ID
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const order = await (duffel.orders as any).create({
       selected_offers: [offerId],
       passengers: [{
         ...passenger,
-        id: 'pas_1', // placeholder, Duffel assigns real IDs
+        id: passengerId,
       }],
       payments: [{
         type: 'balance',
@@ -43,7 +56,16 @@ export async function POST(req: NextRequest) {
 
   } catch (error: unknown) {
     console.error('[/api/book]', error);
-    const message = error instanceof Error ? error.message : 'Booking failed';
+    // Extract detailed Duffel error if available
+    let message = 'Booking failed';
+    if (error instanceof Error) {
+      message = error.message;
+    }
+    // Duffel SDK wraps errors — try to get the errors array
+    const duffelErr = error as any;
+    if (duffelErr?.errors?.length) {
+      message = duffelErr.errors.map((e: any) => e.message).join('; ');
+    }
     return NextResponse.json(
       { error: message },
       { status: 500 }
