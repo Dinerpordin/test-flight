@@ -9,12 +9,6 @@ type Props = {
 
 // Popular airports list
 const AIRPORTS = [
-  { code: 'LHR', name: 'London Heathrow', city: 'London' },
-  { code: 'JFK', name: 'New York JFK', city: 'New York' },
-  { code: 'LAX', name: 'Los Angeles', city: 'Los Angeles' },
-  // Major world airports (50+ hubs)
-// Comprehensive global airports (110+ major hubs)
-const AIRPORTS = [
   // UK & Ireland
   { code: 'LHR', name: 'London Heathrow', city: 'London' },
   { code: 'LGW', name: 'London Gatwick', city: 'London' },
