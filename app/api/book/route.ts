@@ -17,6 +17,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Sanitize phone number - ensure it starts with +
+    if (passenger.phone_number && !passenger.phone_number.startsWith('+')) {
+      passenger.phone_number = '+' + passenger.phone_number;
+    }
+    // Remove any spaces from phone number
+    if (passenger.phone_number) {
+      passenger.phone_number = passenger.phone_number.replace(/\s/g, '');
+    }
+
     // Step 1: Fetch the offer to get the real passenger ID AND current total amount
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const offerRes = await (duffel.offers as any).get(offerId);
@@ -50,13 +59,11 @@ export async function POST(req: NextRequest) {
     });
 
     const orderData = order.data;
-
     return NextResponse.json({
       orderId: orderData.id,
       bookingReference: orderData.booking_reference,
       status: orderData.payment_status?.awaiting_payment ? 'awaiting_payment' : 'confirmed',
     });
-
   } catch (error: unknown) {
     console.error('[/api/book]', error);
     let message = 'Booking failed';
@@ -66,7 +73,7 @@ export async function POST(req: NextRequest) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const duffelErr = error as any;
     if (duffelErr?.errors?.length) {
-      message = duffelErr.errors.map((e: any) => e.message).join('; ');
+      message = duffelErr.errors.map((e: any) => `${e.title}: ${e.message} (field: ${e.source?.pointer || 'unknown'})`).join('; ');
     }
     return NextResponse.json(
       { error: message },
