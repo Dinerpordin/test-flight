@@ -12,28 +12,81 @@ const AIRPORTS = [
   { code: 'LHR', name: 'London Heathrow', city: 'London' },
   { code: 'JFK', name: 'New York JFK', city: 'New York' },
   { code: 'LAX', name: 'Los Angeles', city: 'Los Angeles' },
-  { code: 'DXB', name: 'Dubai', city: 'Dubai' },
-  { code: 'SIN', name: 'Singapore Changi', city: 'Singapore' },
-  { code: 'HKG', name: 'Hong Kong', city: 'Hong Kong' },
-  { code: 'CDG', name: 'Paris Charles de Gaulle', city: 'Paris' },
-  { code: 'AMS', name: 'Amsterdam Schiphol', city: 'Amsterdam' },
-  { code: 'FRA', name: 'Frankfurt', city: 'Frankfurt' },
-  { code: 'IST', name: 'Istanbul', city: 'Istanbul' },
-  { code: 'SYD', name: 'Sydney', city: 'Sydney' },
-  { code: 'MEL', name: 'Melbourne', city: 'Melbourne' },
+  // Major world airports (50+ hubs)
+const AIRPORTS = [
+  // UK & Ireland
+  { code: 'LHR', name: 'London Heathrow', city: 'London' },
+  { code: 'LGW', name: 'London Gatwick', city: 'London' },
+  { code: 'MAN', name: 'Manchester', city: 'Manchester' },
+  { code: 'EDI', name: 'Edinburgh', city: 'Edinburgh' },
+  { code: 'DUB', name: 'Dublin', city: 'Dublin' },
+  { code: 'BHX', name: 'Birmingham', city: 'Birmingham' },
+  
+  // USA
+  { code: 'JFK', name: 'New York JFK', city: 'New York' },
+  { code: 'EWR', name: 'Newark', city: 'New York' },
+  { code: 'LAX', name: 'Los Angeles', city: 'Los Angeles' },
   { code: 'ORD', name: 'Chicago O\'Hare', city: 'Chicago' },
   { code: 'ATL', name: 'Atlanta', city: 'Atlanta' },
   { code: 'DFW', name: 'Dallas/Fort Worth', city: 'Dallas' },
-  { code: 'BKK', name: 'Bangkok Suvarnabhumi', city: 'Bangkok' },
-  { code: 'ICN', name: 'Seoul Incheon', city: 'Seoul' },
+  { code: 'SFO', name: 'San Francisco', city: 'San Francisco' },
+  { code: 'SEA', name: 'Seattle', city: 'Seattle' },
+  { code: 'MIA', name: 'Miami', city: 'Miami' },
+  { code: 'BOS', name: 'Boston', city: 'Boston' },
+  { code: 'IAD', name: 'Washington Dulles', city: 'Washington DC' },
+  { code: 'LAS', name: 'Las Vegas', city: 'Las Vegas' },
+  { code: 'MCO', name: 'Orlando', city: 'Orlando' },
+  
+  // Europe
+  { code: 'CDG', name: 'Paris Charles de Gaulle', city: 'Paris' },
+  { code: 'AMS', name: 'Amsterdam Schiphol', city: 'Amsterdam' },
+  { code: 'FRA', name: 'Frankfurt', city: 'Frankfurt' },
+  { code: 'MAD', name: 'Madrid', city: 'Madrid' },
+  { code: 'BCN', name: 'Barcelona', city: 'Barcelona' },
+  { code: 'FCO', name: 'Rome Fiumicino', city: 'Rome' },
+  { code: 'MUC', name: 'Munich', city: 'Munich' },
+  { code: 'ZRH', name: 'Zurich', city: 'Zurich' },
+  { code: 'VIE', name: 'Vienna', city: 'Vienna' },
+  { code: 'LIS', name: 'Lisbon', city: 'Lisbon' },
+  { code: 'CPH', name: 'Copenhagen', city: 'Copenhagen' },
+  { code: 'ARN', name: 'Stockholm Arlanda', city: 'Stockholm' },
+  { code: 'OSL', name: 'Oslo', city: 'Oslo' },
+  { code: 'BRU', name: 'Brussels', city: 'Brussels' },
+  
+  // Middle East
+  { code: 'DXB', name: 'Dubai', city: 'Dubai' },
+  { code: 'DOH', name: 'Doha', city: 'Doha' },
+  { code: 'AUH', name: 'Abu Dhabi', city: 'Abu Dhabi' },
+  { code: 'IST', name: 'Istanbul', city: 'Istanbul' },
+  
+  // Asia-Pacific
+  { code: 'SIN', name: 'Singapore Changi', city: 'Singapore' },
+  { code: 'HKG', name: 'Hong Kong', city: 'Hong Kong' },
   { code: 'NRT', name: 'Tokyo Narita', city: 'Tokyo' },
+  { code: 'HND', name: 'Tokyo Haneda', city: 'Tokyo' },
+  { code: 'ICN', name: 'Seoul Incheon', city: 'Seoul' },
+  { code: 'PEK', name: 'Beijing Capital', city: 'Beijing' },
+  { code: 'PVG', name: 'Shanghai Pudong', city: 'Shanghai' },
+  { code: 'CAN', name: 'Guangzhou', city: 'Guangzhou' },
+  { code: 'BKK', name: 'Bangkok Suvarnabhumi', city: 'Bangkok' },
+  { code: 'KUL', name: 'Kuala Lumpur', city: 'Kuala Lumpur' },
   { code: 'DEL', name: 'Delhi', city: 'Delhi' },
   { code: 'BOM', name: 'Mumbai', city: 'Mumbai' },
+  { code: 'SYD', name: 'Sydney', city: 'Sydney' },
+  { code: 'MEL', name: 'Melbourne', city: 'Melbourne' },
+  
+  // Canada
+  { code: 'YYZ', name: 'Toronto Pearson', city: 'Toronto' },
+  { code: 'YVR', name: 'Vancouver', city: 'Vancouver' },
+  
+  // Latin America
+  { code: 'MEX', name: 'Mexico City', city: 'Mexico City' },
+  { code: 'GRU', name: 'São Paulo', city: 'São Paulo' },
+  
+  // Africa
+  { code: 'JNB', name: 'Johannesburg', city: 'Johannesburg' },
+  { code: 'CAI', name: 'Cairo', city: 'Cairo' },
 ];
-
-export function SearchForm({ onResults, onError, setLoading }: Props) {
-  const [tripType, setTripType] = useState<'one-way' | 'return'>('one-way');
-  const [from, setFrom] = useState('LHR');
   const [to, setTo] = useState('JFK');
   const [depDate, setDepDate] = useState('');
   const [retDate, setRetDate] = useState('');
