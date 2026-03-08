@@ -11,6 +11,7 @@ export default function BookPage() {
   const [error, setError] = useState('');
 
   // Passenger fields
+  const titleRef = useRef<HTMLSelectElement>(null);
   const firstNameRef = useRef<HTMLInputElement>(null);
   const lastNameRef = useRef<HTMLInputElement>(null);
   const dobRef = useRef<HTMLInputElement>(null);
@@ -40,6 +41,7 @@ export default function BookPage() {
           totalAmount: offer?.totalAmount,
           totalCurrency: offer?.totalCurrency,
           passenger: {
+            title: titleRef.current?.value,
             given_name: firstNameRef.current?.value,
             family_name: lastNameRef.current?.value,
             born_on: dobRef.current?.value,
@@ -57,7 +59,6 @@ export default function BookPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Booking failed');
-      // Redirect to confirmation page
       const params = new URLSearchParams();
       if (data.orderId) params.set('orderId', data.orderId);
       if (data.bookingReference) params.set('ref', data.bookingReference);
@@ -117,7 +118,18 @@ export default function BookPage() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <h2 className="text-lg font-semibold">Passenger details</h2>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <label className={label}>Title</label>
+              <select ref={titleRef} required className={input}>
+                <option value="">Select...</option>
+                <option value="mr">Mr</option>
+                <option value="ms">Ms</option>
+                <option value="mrs">Mrs</option>
+                <option value="miss">Miss</option>
+                <option value="dr">Dr</option>
+              </select>
+            </div>
             <div>
               <label className={label}>First name (as on passport)</label>
               <input ref={firstNameRef} required placeholder="e.g. John" className={input} />
