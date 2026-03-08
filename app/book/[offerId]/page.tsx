@@ -160,7 +160,7 @@ export default function BookPage() {
             </div>
             <div>
               <label className={label}>Phone number (with country code)</label>
-              <input ref={phoneRef} required placeholder="+447700900000" className={input} />
+              <input ref={phoneRef} required placeholder="+14155550123" className={input} />
             </div>
           </div>
           <h2 className="text-lg font-semibold pt-2">Travel document</h2>
