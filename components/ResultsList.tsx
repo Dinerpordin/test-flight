@@ -1,3 +1,6 @@
+'use client';
+
+import { useState } from 'react';
 import { FlightCard } from './FlightCard';
 
 type Props = {
@@ -7,6 +10,7 @@ type Props = {
     liveMode?: boolean;
     cached?: boolean;
   };
+  onSelect?: (offer: any) => void;
 };
 
 const SORT_OPTIONS = [
@@ -15,7 +19,8 @@ const SORT_OPTIONS = [
   { label: 'Duration', value: 'duration' },
 ] as const;
 
-export function ResultsList({ data }: Props) {
+export function ResultsList({ data, onSelect }: Props) {
+  const [sort, setSort] = useState<'price-asc' | 'price-desc' | 'duration'>('price-asc');
   const offers = data.offers ?? [];
 
   if (offers.length === 0) {
@@ -26,11 +31,16 @@ export function ResultsList({ data }: Props) {
     );
   }
 
-  const sorted = [...offers].sort(
-    (a, b) => parseFloat(a.totalAmount) - parseFloat(b.totalAmount)
-  );
+  const sorted = [...offers].sort((a, b) => {
+    if (sort === 'price-asc') return parseFloat(a.totalAmount) - parseFloat(b.totalAmount);
+    if (sort === 'price-desc') return parseFloat(b.totalAmount) - parseFloat(a.totalAmount);
+    // duration sort
+    const da = a.slices?.[0]?.duration ?? '';
+    const db = b.slices?.[0]?.duration ?? '';
+    return da.localeCompare(db);
+  });
 
-  const cheapest = sorted[0];
+  const cheapest = [...offers].sort((a, b) => parseFloat(a.totalAmount) - parseFloat(b.totalAmount))[0];
   const fastest = [...offers].sort((a, b) => {
     const da = a.slices?.[0]?.duration ?? '';
     const db = b.slices?.[0]?.duration ?? '';
@@ -39,35 +49,41 @@ export function ResultsList({ data }: Props) {
 
   return (
     <div className="space-y-3">
-      {/* Results summary */}
+      {/* Results summary + sort */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-slate-400">
-          {offers.length} flights found
+          {offers.length} flights found{' '}
           {data.cached && (
-            <span className="ml-2 rounded-full bg-slate-800 px-2 py-0.5 text-xs text-slate-500">
-              cached
-            </span>
+            <span className="ml-1 text-xs bg-slate-700 text-slate-300 px-2 py-0.5 rounded-full">cached</span>
           )}
         </p>
-        <p className="text-xs text-slate-600">
-          {data.liveMode ? 'Live prices' : 'Test mode'}
-        </p>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-slate-500">Sort:</span>
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value as typeof sort)}
+            className="text-xs bg-slate-800 border border-slate-700 text-slate-300 rounded px-2 py-1"
+          >
+            {SORT_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+          <span className="text-xs text-slate-500">
+            {data.liveMode ? 'Live prices' : 'Test mode'}
+          </span>
+        </div>
       </div>
 
-      {/* Best / Cheapest badges on first 2 results */}
-      {sorted.map((offer, i) => (
+      {/* Flight cards */}
+      {sorted.map((offer) => (
         <div key={offer.id} className="relative">
           {offer.id === cheapest?.id && (
-            <span className="absolute -top-2 left-4 z-10 rounded-full bg-emerald-500 px-2 py-0.5 text-xs font-bold text-slate-950">
-              Cheapest
-            </span>
+            <span className="absolute -top-2 left-3 z-10 text-xs bg-green-600 text-white px-2 py-0.5 rounded-full">Cheapest</span>
           )}
           {offer.id === fastest?.id && offer.id !== cheapest?.id && (
-            <span className="absolute -top-2 left-4 z-10 rounded-full bg-amber-500 px-2 py-0.5 text-xs font-bold text-slate-950">
-              Fastest
-            </span>
+            <span className="absolute -top-2 left-3 z-10 text-xs bg-blue-600 text-white px-2 py-0.5 rounded-full">Fastest</span>
           )}
-          <FlightCard offer={offer} />
+          <FlightCard offer={offer} onSelect={onSelect} />
         </div>
       ))}
     </div>
