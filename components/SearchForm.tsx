@@ -13,6 +13,7 @@ const AIRPORTS = [
   { code: 'JFK', name: 'New York JFK', city: 'New York' },
   { code: 'LAX', name: 'Los Angeles', city: 'Los Angeles' },
   // Major world airports (50+ hubs)
+// Comprehensive global airports (110+ major hubs)
 const AIRPORTS = [
   // UK & Ireland
   { code: 'LHR', name: 'London Heathrow', city: 'London' },
@@ -21,6 +22,7 @@ const AIRPORTS = [
   { code: 'EDI', name: 'Edinburgh', city: 'Edinburgh' },
   { code: 'DUB', name: 'Dublin', city: 'Dublin' },
   { code: 'BHX', name: 'Birmingham', city: 'Birmingham' },
+  { code: 'GLA', name: 'Glasgow', city: 'Glasgow' },
   
   // USA
   { code: 'JFK', name: 'New York JFK', city: 'New York' },
@@ -36,6 +38,9 @@ const AIRPORTS = [
   { code: 'IAD', name: 'Washington Dulles', city: 'Washington DC' },
   { code: 'LAS', name: 'Las Vegas', city: 'Las Vegas' },
   { code: 'MCO', name: 'Orlando', city: 'Orlando' },
+  { code: 'PHX', name: 'Phoenix', city: 'Phoenix' },
+  { code: 'IAH', name: 'Houston', city: 'Houston' },
+  { code: 'DEN', name: 'Denver', city: 'Denver' },
   
   // Europe
   { code: 'CDG', name: 'Paris Charles de Gaulle', city: 'Paris' },
@@ -52,41 +57,103 @@ const AIRPORTS = [
   { code: 'ARN', name: 'Stockholm Arlanda', city: 'Stockholm' },
   { code: 'OSL', name: 'Oslo', city: 'Oslo' },
   { code: 'BRU', name: 'Brussels', city: 'Brussels' },
+  { code: 'ATH', name: 'Athens', city: 'Athens' },
+  { code: 'PRG', name: 'Prague', city: 'Prague' },
+  { code: 'WAW', name: 'Warsaw', city: 'Warsaw' },
+  { code: 'BUD', name: 'Budapest', city: 'Budapest' },
+  { code: 'OTP', name: 'Bucharest', city: 'Bucharest' },
+  { code: 'MXP', name: 'Milan Malpensa', city: 'Milan' },
+  { code: 'VCE', name: 'Venice', city: 'Venice' },
   
   // Middle East
   { code: 'DXB', name: 'Dubai', city: 'Dubai' },
   { code: 'DOH', name: 'Doha', city: 'Doha' },
   { code: 'AUH', name: 'Abu Dhabi', city: 'Abu Dhabi' },
   { code: 'IST', name: 'Istanbul', city: 'Istanbul' },
+  { code: 'RUH', name: 'Riyadh', city: 'Riyadh' },
+  { code: 'JED', name: 'Jeddah', city: 'Jeddah' },
+  { code: 'KWI', name: 'Kuwait City', city: 'Kuwait' },
+  { code: 'MCT', name: 'Muscat', city: 'Muscat' },
+  { code: 'TLV', name: 'Tel Aviv', city: 'Tel Aviv' },
+  { code: 'AMM', name: 'Amman', city: 'Amman' },
+  { code: 'BEY', name: 'Beirut', city: 'Beirut' },
+  { code: 'BAH', name: 'Bahrain', city: 'Manama' },
   
-  // Asia-Pacific
+  // South Asia
+  { code: 'DEL', name: 'Delhi', city: 'Delhi' },
+  { code: 'BOM', name: 'Mumbai', city: 'Mumbai' },
+  { code: 'BLR', name: 'Bangalore', city: 'Bangalore' },
+  { code: 'HYD', name: 'Hyderabad', city: 'Hyderabad' },
+  { code: 'MAA', name: 'Chennai', city: 'Chennai' },
+  { code: 'CCU', name: 'Kolkata', city: 'Kolkata' },
+  { code: 'DAC', name: 'Dhaka', city: 'Dhaka' },
+  { code: 'KHI', name: 'Karachi', city: 'Karachi' },
+  { code: 'LHE', name: 'Lahore', city: 'Lahore' },
+  { code: 'ISB', name: 'Islamabad', city: 'Islamabad' },
+  { code: 'CMB', name: 'Colombo', city: 'Colombo' },
+  { code: 'KTM', name: 'Kathmandu', city: 'Kathmandu' },
+  
+  // Southeast Asia
   { code: 'SIN', name: 'Singapore Changi', city: 'Singapore' },
+  { code: 'BKK', name: 'Bangkok Suvarnabhumi', city: 'Bangkok' },
+  { code: 'KUL', name: 'Kuala Lumpur', city: 'Kuala Lumpur' },
+  { code: 'CGK', name: 'Jakarta', city: 'Jakarta' },
+  { code: 'MNL', name: 'Manila', city: 'Manila' },
+  { code: 'SGN', name: 'Ho Chi Minh City', city: 'Ho Chi Minh' },
+  { code: 'HAN', name: 'Hanoi', city: 'Hanoi' },
+  { code: 'RGN', name: 'Yangon', city: 'Yangon' },
+  
+  // East Asia
   { code: 'HKG', name: 'Hong Kong', city: 'Hong Kong' },
   { code: 'NRT', name: 'Tokyo Narita', city: 'Tokyo' },
   { code: 'HND', name: 'Tokyo Haneda', city: 'Tokyo' },
   { code: 'ICN', name: 'Seoul Incheon', city: 'Seoul' },
+  { code: 'KIX', name: 'Osaka Kansai', city: 'Osaka' },
+  { code: 'TPE', name: 'Taipei', city: 'Taipei' },
   { code: 'PEK', name: 'Beijing Capital', city: 'Beijing' },
   { code: 'PVG', name: 'Shanghai Pudong', city: 'Shanghai' },
   { code: 'CAN', name: 'Guangzhou', city: 'Guangzhou' },
-  { code: 'BKK', name: 'Bangkok Suvarnabhumi', city: 'Bangkok' },
-  { code: 'KUL', name: 'Kuala Lumpur', city: 'Kuala Lumpur' },
-  { code: 'DEL', name: 'Delhi', city: 'Delhi' },
-  { code: 'BOM', name: 'Mumbai', city: 'Mumbai' },
+  { code: 'SZX', name: 'Shenzhen', city: 'Shenzhen' },
+  { code: 'CTU', name: 'Chengdu', city: 'Chengdu' },
+  { code: 'XIY', name: 'Xi\'an', city: 'Xi\'an' },
+  
+  // Australia & Pacific
   { code: 'SYD', name: 'Sydney', city: 'Sydney' },
   { code: 'MEL', name: 'Melbourne', city: 'Melbourne' },
+  { code: 'BNE', name: 'Brisbane', city: 'Brisbane' },
+  { code: 'PER', name: 'Perth', city: 'Perth' },
+  { code: 'AKL', name: 'Auckland', city: 'Auckland' },
+  { code: 'CHC', name: 'Christchurch', city: 'Christchurch' },
   
   // Canada
   { code: 'YYZ', name: 'Toronto Pearson', city: 'Toronto' },
   { code: 'YVR', name: 'Vancouver', city: 'Vancouver' },
+  { code: 'YUL', name: 'Montreal', city: 'Montreal' },
+  { code: 'YYC', name: 'Calgary', city: 'Calgary' },
   
   // Latin America
   { code: 'MEX', name: 'Mexico City', city: 'Mexico City' },
   { code: 'GRU', name: 'São Paulo', city: 'São Paulo' },
+  { code: 'GIG', name: 'Rio de Janeiro', city: 'Rio de Janeiro' },
+  { code: 'BOG', name: 'Bogotá', city: 'Bogotá' },
+  { code: 'LIM', name: 'Lima', city: 'Lima' },
+  { code: 'SCL', name: 'Santiago', city: 'Santiago' },
+  { code: 'EZE', name: 'Buenos Aires', city: 'Buenos Aires' },
+  { code: 'PTY', name: 'Panama City', city: 'Panama City' },
+  { code: 'CUN', name: 'Cancun', city: 'Cancun' },
   
   // Africa
   { code: 'JNB', name: 'Johannesburg', city: 'Johannesburg' },
+  { code: 'CPT', name: 'Cape Town', city: 'Cape Town' },
   { code: 'CAI', name: 'Cairo', city: 'Cairo' },
-];
+  { code: 'LOS', name: 'Lagos', city: 'Lagos' },
+  { code: 'NBO', name: 'Nairobi', city: 'Nairobi' },
+  { code: 'ADD', name: 'Addis Ababa', city: 'Addis Ababa' },
+  { code: 'CMN', name: 'Casablanca', city: 'Casablanca' },
+  { code: 'ACC', name: 'Accra', city: 'Accra' },
+  { code: 'ALG', name: 'Algiers', city: 'Algiers' },
+  { code: 'TUN', name: 'Tunis', city: 'Tunis' },
+];];
   const [to, setTo] = useState('JFK');
   const [depDate, setDepDate] = useState('');
   const [retDate, setRetDate] = useState('');
