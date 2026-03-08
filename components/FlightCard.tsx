@@ -6,14 +6,12 @@ type Segment = {
   operating_carrier: { name: string; iata_code: string };
   operating_carrier_flight_number: string;
 };
-
 type OfferSlice = {
   segments: Segment[];
   duration: string;
   origin: { iata_code: string };
   destination: { iata_code: string };
 };
-
 type Offer = {
   id: string;
   totalAmount: string;
@@ -23,12 +21,10 @@ type Offer = {
   owner: { name: string; iata_code: string };
   expiresAt: string;
 };
-
 function formatTime(iso: string) {
   if (!iso) return '--';
   return new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 }
-
 function formatDuration(iso: string) {
   if (!iso) return '';
   const match = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?/);
@@ -37,7 +33,6 @@ function formatDuration(iso: string) {
   const m = match[2] ? `${match[2]}m` : '';
   return `${h}${m}`.trim();
 }
-
 function SliceLeg({ slice, label }: { slice: OfferSlice; label?: string }) {
   const firstSeg = slice?.segments?.[0];
   const lastSeg = slice?.segments?.[slice.segments.length - 1];
@@ -65,7 +60,6 @@ function SliceLeg({ slice, label }: { slice: OfferSlice; label?: string }) {
     </div>
   );
 }
-
 export function FlightCard({
   offer,
   onSelect,
@@ -76,7 +70,7 @@ export function FlightCard({
   const isReturn = (offer.slices?.length ?? 0) > 1;
   const outbound = offer.slices?.[0];
   const inbound = offer.slices?.[1];
-
+  const hasMarkup = offer.baseAmount && offer.totalAmount !== offer.baseAmount;
   return (
     <div className="rounded-xl bg-slate-800/60 border border-slate-700 p-4 flex flex-col gap-3 hover:border-cyan-500/50 transition-colors">
       {/* Carrier name */}
@@ -86,24 +80,28 @@ export function FlightCard({
           <span className="ml-2 text-xs bg-cyan-900/40 text-cyan-400 px-2 py-0.5 rounded-full">Return</span>
         )}
       </div>
-
       {/* Outbound leg */}
       <SliceLeg slice={outbound} label={isReturn ? 'Out' : undefined} />
-
-      {/* Return leg - only shown for round trips */}
+      {/* Return leg */}
       {isReturn && inbound && (
         <>
           <div className="border-t border-slate-700/60" />
           <SliceLeg slice={inbound} label="Back" />
         </>
       )}
-
       {/* Price + CTA */}
       <div className="flex items-center justify-between pt-1">
         <div>
-          <p className="text-xl font-bold text-white">
-            {offer.totalCurrency} {offer.totalAmount}
-          </p>
+          <div className="flex items-baseline gap-2">
+            <p className="text-xl font-bold text-white">
+              {offer.totalCurrency} {offer.totalAmount}
+            </p>
+            {hasMarkup && (
+              <p className="text-sm text-slate-500 line-through">
+                {offer.totalCurrency} {parseFloat(offer.baseAmount).toFixed(2)}
+              </p>
+            )}
+          </div>
           <p className="text-xs text-slate-400">incl. taxes &amp; fees</p>
         </div>
         <button
