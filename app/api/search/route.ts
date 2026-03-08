@@ -61,8 +61,11 @@ export async function POST(req: NextRequest) {
       return_offers: returnOffers,
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data = offerRequest.data as any;
     const markup = parseFloat(process.env.MARKUP_PERCENTAGE || '0');
-    const results = offerRequest.data.offers?.map((offer: any) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const results = data.offers?.map((offer: any) => {
       const base = parseFloat(offer.total_amount);
       const totalWithMarkup = (base * (1 + markup / 100)).toFixed(2);
       return {
@@ -79,18 +82,19 @@ export async function POST(req: NextRequest) {
     });
 
     const response = {
-      offerRequestId: offerRequest.data.id,
+      offerRequestId: data.id,
       offers: results,
-      liveMode: offerRequest.data.live_mode,
+      liveMode: data.live_mode,
       cached: false,
     };
 
     cacheSet(cacheKey, response);
     return NextResponse.json(response);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[/api/search]', error);
+    const message = error instanceof Error ? error.message : 'Internal server error';
     return NextResponse.json(
-      { error: error.message ?? 'Internal server error' },
+      { error: message },
       { status: 500 }
     );
   }
