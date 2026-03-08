@@ -147,7 +147,11 @@ const AIRPORTS = [
   { code: 'ACC', name: 'Accra', city: 'Accra' },
   { code: 'ALG', name: 'Algiers', city: 'Algiers' },
   { code: 'TUN', name: 'Tunis', city: 'Tunis' },
-];];
+]
+
+    export function SearchForm({ onResults, onError, setLoading }: Props) {
+        const [tripType, setTripType] = useState<'one-way' | 'return'>('one-way');
+        const [from, setFrom] = useState('LHR');
   const [to, setTo] = useState('JFK');
   const [depDate, setDepDate] = useState('');
   const [retDate, setRetDate] = useState('');
