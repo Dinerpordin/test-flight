@@ -38,56 +38,78 @@ function formatDuration(iso: string) {
   return `${h}${m}`.trim();
 }
 
-export function FlightCard({ offer }: { offer: Offer }) {
-  const firstSlice = offer.slices?.[0];
-  const firstSeg = firstSlice?.segments?.[0];
-  const lastSeg = firstSlice?.segments?.[firstSlice.segments.length - 1];
-  const stops = (firstSlice?.segments?.length ?? 1) - 1;
+function SliceLeg({ slice, label }: { slice: OfferSlice; label?: string }) {
+  const firstSeg = slice?.segments?.[0];
+  const lastSeg = slice?.segments?.[slice.segments.length - 1];
+  const stops = (slice?.segments?.length ?? 1) - 1;
+  return (
+    <div className="flex items-center gap-4 flex-1">
+      {label && (
+        <span className="text-xs text-slate-500 uppercase font-semibold w-14 shrink-0">{label}</span>
+      )}
+      <div className="text-center min-w-[56px]">
+        <p className="text-lg font-bold">{formatTime(firstSeg?.departing_at ?? '')}</p>
+        <p className="text-xs text-slate-400">{slice?.origin?.iata_code}</p>
+      </div>
+      <div className="flex-1 text-center">
+        <p className="text-xs text-slate-400">{formatDuration(slice?.duration ?? '')}</p>
+        <div className="border-t border-slate-600 my-1" />
+        <p className="text-xs text-slate-500">
+          {stops === 0 ? 'Direct' : `${stops} stop${stops > 1 ? 's' : ''}`}
+        </p>
+      </div>
+      <div className="text-center min-w-[56px]">
+        <p className="text-lg font-bold">{formatTime(lastSeg?.arriving_at ?? '')}</p>
+        <p className="text-xs text-slate-400">{slice?.destination?.iata_code}</p>
+      </div>
+    </div>
+  );
+}
+
+export function FlightCard({
+  offer,
+  onSelect,
+}: {
+  offer: Offer;
+  onSelect?: (offer: Offer) => void;
+}) {
+  const isReturn = (offer.slices?.length ?? 0) > 1;
+  const outbound = offer.slices?.[0];
+  const inbound = offer.slices?.[1];
 
   return (
-    <div className="group flex flex-col gap-4 rounded-2xl border border-slate-800 bg-slate-900 p-4 transition-colors hover:border-sky-500/50 sm:flex-row sm:items-center sm:justify-between">
-      {/* Carrier + route */}
-      <div className="flex items-center gap-4">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-800 text-xs font-bold text-slate-300">
-          {offer.owner?.iata_code ?? '?'}
-        </div>
-        <div>
-          <p className="text-sm font-medium">{offer.owner?.name ?? 'Unknown airline'}</p>
-          <p className="text-xs text-slate-500">
-            {firstSeg?.operating_carrier_flight_number ?? ''}
-          </p>
-        </div>
+    <div className="rounded-xl bg-slate-800/60 border border-slate-700 p-4 flex flex-col gap-3 hover:border-cyan-500/50 transition-colors">
+      {/* Carrier name */}
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-semibold text-slate-200">{offer.owner?.name ?? 'Unknown airline'}</span>
+        {isReturn && (
+          <span className="ml-2 text-xs bg-cyan-900/40 text-cyan-400 px-2 py-0.5 rounded-full">Return</span>
+        )}
       </div>
 
-      {/* Times + duration */}
-      <div className="flex flex-1 items-center justify-between gap-4 text-center">
-        <div>
-          <p className="text-lg font-bold">{formatTime(firstSeg?.departing_at ?? '')}</p>
-          <p className="text-xs text-slate-400">{firstSlice?.origin?.iata_code}</p>
-        </div>
-        <div className="flex flex-col items-center gap-1">
-          <p className="text-xs text-slate-500">{formatDuration(firstSlice?.duration ?? '')}</p>
-          <div className="flex items-center gap-1">
-            <div className="h-px w-10 bg-slate-700" />
-            <span className="text-xs text-slate-500">
-              {stops === 0 ? 'Direct' : `${stops} stop${stops > 1 ? 's' : ''}`}
-            </span>
-            <div className="h-px w-10 bg-slate-700" />
-          </div>
-        </div>
-        <div>
-          <p className="text-lg font-bold">{formatTime(lastSeg?.arriving_at ?? '')}</p>
-          <p className="text-xs text-slate-400">{firstSlice?.destination?.iata_code}</p>
-        </div>
-      </div>
+      {/* Outbound leg */}
+      <SliceLeg slice={outbound} label={isReturn ? 'Out' : undefined} />
+
+      {/* Return leg - only shown for round trips */}
+      {isReturn && inbound && (
+        <>
+          <div className="border-t border-slate-700/60" />
+          <SliceLeg slice={inbound} label="Back" />
+        </>
+      )}
 
       {/* Price + CTA */}
-      <div className="flex flex-col items-end gap-2">
-        <p className="text-xl font-bold">
-          {offer.totalCurrency} {offer.totalAmount}
-        </p>
-        <p className="text-xs text-slate-500">incl. taxes &amp; fees</p>
-        <button className="rounded-xl bg-sky-500 px-4 py-1.5 text-sm font-semibold text-slate-950 hover:bg-sky-400 transition-colors">
+      <div className="flex items-center justify-between pt-1">
+        <div>
+          <p className="text-xl font-bold text-white">
+            {offer.totalCurrency} {offer.totalAmount}
+          </p>
+          <p className="text-xs text-slate-400">incl. taxes &amp; fees</p>
+        </div>
+        <button
+          onClick={() => onSelect?.(offer)}
+          className="bg-cyan-500 hover:bg-cyan-400 text-black font-semibold px-5 py-2 rounded-lg transition-colors"
+        >
           Select
         </button>
       </div>
