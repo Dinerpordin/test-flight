@@ -21,7 +21,6 @@ export default function BookPage() {
   const passportExpiryRef = useRef<HTMLInputElement>(null);
   const nationalityRef = useRef<HTMLInputElement>(null);
 
-  // Retrieve the offer data stored in sessionStorage by the search page
   const [offer, setOffer] = useState<any>(null);
   useEffect(() => {
     const raw = sessionStorage.getItem('selectedOffer');
@@ -58,12 +57,11 @@ export default function BookPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Booking failed');
-      // Redirect to Duffel hosted payment page
-      if (data.paymentUrl) {
-        window.location.href = data.paymentUrl;
-      } else if (data.orderId) {
-        router.push(`/confirmation?orderId=${data.orderId}`);
-      }
+      // Redirect to confirmation page
+      const params = new URLSearchParams();
+      if (data.orderId) params.set('orderId', data.orderId);
+      if (data.bookingReference) params.set('ref', data.bookingReference);
+      router.push(`/confirmation?${params.toString()}`);
     } catch (err: any) {
       setError(err.message);
       setState('error');
@@ -81,25 +79,21 @@ export default function BookPage() {
 
   function legSummary(slice: any) {
     const seg0 = slice?.segments?.[0];
-    const segLast = slice?.segments?.[slice.segments.length - 1];
     const dep = seg0?.departing_at ? new Date(seg0.departing_at).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' }) : '';
-    return `${slice?.origin?.iata_code} → ${slice?.destination?.iata_code}  •  ${dep}`;
+    return `${slice?.origin?.iata_code} → ${slice?.destination?.iata_code} • ${dep}`;
   }
 
   return (
     <main className="min-h-screen bg-slate-950 text-white px-4 py-10">
       <div className="max-w-2xl mx-auto space-y-8">
-
-        {/* Header */}
         <div>
           <button onClick={() => router.back()} className="text-sm text-slate-400 hover:text-white mb-4">
             ← Back to results
           </button>
           <h1 className="text-2xl font-bold">Complete your booking</h1>
-          <p className="text-slate-400 text-sm mt-1">Fill in passenger details. You will be taken to Duffel&apos;s secure payment page to complete your purchase.</p>
+          <p className="text-slate-400 text-sm mt-1">Fill in passenger details to confirm your booking.</p>
         </div>
 
-        {/* Flight summary */}
         {offer && (
           <div className="rounded-xl bg-slate-800/60 border border-slate-700 p-5 space-y-3">
             <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">Flight summary</h2>
@@ -116,15 +110,13 @@ export default function BookPage() {
               {offer.baseAmount !== offer.totalAmount && (
                 <span className="text-sm text-slate-500 line-through">{offer.totalCurrency} {parseFloat(offer.baseAmount).toFixed(2)}</span>
               )}
-              <span className="text-xs text-slate-400">incl. taxes &amp; fees</span>
+              <span className="text-xs text-slate-400">incl. taxes & fees</span>
             </div>
           </div>
         )}
 
-        {/* Passenger form */}
         <form onSubmit={handleSubmit} className="space-y-6">
           <h2 className="text-lg font-semibold">Passenger details</h2>
-
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className={label}>First name (as on passport)</label>
@@ -135,7 +127,6 @@ export default function BookPage() {
               <input ref={lastNameRef} required placeholder="e.g. Smith" className={input} />
             </div>
           </div>
-
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className={label}>Date of birth</label>
@@ -150,7 +141,6 @@ export default function BookPage() {
               </select>
             </div>
           </div>
-
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className={label}>Email address</label>
@@ -161,9 +151,7 @@ export default function BookPage() {
               <input ref={phoneRef} required placeholder="+447700900000" className={input} />
             </div>
           </div>
-
           <h2 className="text-lg font-semibold pt-2">Travel document</h2>
-
           <div className="grid grid-cols-3 gap-4">
             <div>
               <label className={label}>Passport number</label>
@@ -188,11 +176,10 @@ export default function BookPage() {
             disabled={state === 'loading'}
             className="w-full rounded-xl bg-cyan-500 hover:bg-cyan-400 disabled:opacity-50 text-black font-bold py-3 text-base transition-colors"
           >
-            {state === 'loading' ? 'Processing...' : `Book & Pay ${offer ? `${offer.totalCurrency} ${offer.totalAmount}` : ''} →`}
+            {state === 'loading' ? 'Processing...' : `Confirm Booking — ${offer ? `${offer.totalCurrency} ${offer.totalAmount}` : ''} →`}
           </button>
-
           <p className="text-center text-xs text-slate-500">
-            🔒 You will be redirected to Duffel&apos;s secure payment page. Your card details are never stored on this site.
+            🔒 Payment is processed securely via Duffel. Your card details are never stored on this site.
           </p>
         </form>
       </div>
