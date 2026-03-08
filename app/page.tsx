@@ -16,6 +16,12 @@ export default function HomePage() {
   const [results, setResults] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedOffer, setSelectedOffer] = useState<any | null>(null);
+
+  function handleSelect(offer: any) {
+    setSelectedOffer(offer);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
 
   return (
     <div className="space-y-8">
@@ -30,7 +36,7 @@ export default function HomePage() {
           </p>
         </div>
         <SearchForm
-          onResults={(data) => { setResults(data); setError(null); }}
+          onResults={(data) => { setResults(data); setError(null); setSelectedOffer(null); }}
           onError={setError}
           setLoading={setLoading}
         />
@@ -39,33 +45,62 @@ export default function HomePage() {
         )}
       </section>
 
+      {/* Selected offer banner */}
+      {selectedOffer && (
+        <section className="rounded-2xl border border-cyan-500/40 bg-cyan-900/20 p-5">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-sm font-semibold text-cyan-400 mb-1">Flight selected</p>
+              <p className="text-lg font-bold text-white">
+                {selectedOffer.owner?.name} &mdash; {selectedOffer.totalCurrency} {selectedOffer.totalAmount}
+              </p>
+              <p className="text-xs text-slate-400 mt-1">
+                Offer ID: {selectedOffer.id}
+              </p>
+              {selectedOffer.expiresAt && (
+                <p className="text-xs text-slate-400">
+                  Price expires: {new Date(selectedOffer.expiresAt).toLocaleString('en-GB')}
+                </p>
+              )}
+            </div>
+            <button
+              onClick={() => setSelectedOffer(null)}
+              className="text-xs text-slate-400 hover:text-white transition-colors shrink-0"
+            >
+              Dismiss
+            </button>
+          </div>
+        </section>
+      )}
+
       {/* Popular Routes */}
       {!results && (
         <section>
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-widest text-slate-500">
-            Popular routes
-          </h2>
-          <div className="flex gap-3 overflow-x-auto pb-2">
+          <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-slate-500">Popular Routes</p>
+          <div className="flex flex-wrap gap-2">
             {POPULAR_ROUTES.map((r) => (
-              <div
+              <button
                 key={r.label}
-                className="flex-shrink-0 rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm text-slate-300 cursor-pointer hover:border-sky-500 transition-colors"
+                className="rounded-full border border-slate-700 px-4 py-1.5 text-sm text-slate-300 hover:border-cyan-500 hover:text-cyan-400 transition-colors"
               >
                 {r.label}
-              </div>
+              </button>
             ))}
           </div>
         </section>
       )}
 
-      {/* Results */}
+      {/* Loading */}
       {loading && (
-        <div className="flex items-center justify-center py-16">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-sky-500 border-t-transparent" />
-          <span className="ml-3 text-slate-400">Searching live fares...</span>
+        <div className="flex justify-center py-12">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-cyan-500 border-t-transparent" />
         </div>
       )}
-      {results && !loading && <ResultsList data={results} />}
+
+      {/* Results */}
+      {results && !loading && (
+        <ResultsList data={results} onSelect={handleSelect} />
+      )}
     </div>
   );
 }
