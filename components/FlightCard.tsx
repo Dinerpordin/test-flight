@@ -15,7 +15,6 @@ type OfferSlice = {
 type Offer = {
   id: string;
   totalAmount: string;
-  baseAmount: string;
   totalCurrency: string;
   slices: OfferSlice[];
   owner: { name: string; iata_code: string };
@@ -70,7 +69,6 @@ export function FlightCard({
   const isReturn = (offer.slices?.length ?? 0) > 1;
   const outbound = offer.slices?.[0];
   const inbound = offer.slices?.[1];
-  const hasMarkup = offer.baseAmount && offer.totalAmount !== offer.baseAmount;
   return (
     <div className="rounded-xl bg-slate-800/60 border border-slate-700 p-4 flex flex-col gap-3 hover:border-cyan-500/50 transition-colors">
       {/* Carrier name */}
@@ -92,17 +90,10 @@ export function FlightCard({
       {/* Price + CTA */}
       <div className="flex items-center justify-between pt-1">
         <div>
-          <div className="flex items-baseline gap-2">
-            <p className="text-xl font-bold text-white">
-              {offer.totalCurrency} {offer.totalAmount}
-            </p>
-            {hasMarkup && (
-              <p className="text-sm text-slate-500 line-through">
-                {offer.totalCurrency} {parseFloat(offer.baseAmount).toFixed(2)}
-              </p>
-            )}
-          </div>
-          <p className="text-xs text-slate-400">incl. taxes &amp; fees</p>
+          <p className="text-xl font-bold text-white">
+            {offer.totalCurrency} {offer.totalAmount}
+          </p>
+          <p className="text-xs text-slate-400">incl. taxes & fees</p>
         </div>
         <button
           onClick={() => onSelect?.(offer)}
