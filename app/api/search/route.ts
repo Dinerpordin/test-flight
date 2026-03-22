@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Duffel } from '@duffel/api';
-const duffel = new Duffel({
-  token: process.env.DUFFEL_ACCESS_TOKEN!,
-});
-// Simple in-memory cache (resets on cold starts)
-const cache = new Map<string, { data: unknown; expires: number }>();
+
+const KIWI_KEY = process.env.TEQUILA_API_KEY!;
 const CACHE_TTL = 600_000; // 10 minutes in ms
+
+const cache = new Map<string, { data: unknown; expires: number }>();
+
 function cacheGet(key: string): unknown | null {
   const entry = cache.get(key);
   if (!entry) return null;
@@ -15,125 +14,129 @@ function cacheGet(key: string): unknown | null {
   }
   return entry.data;
 }
+
 function cacheSet(key: string, data: unknown): void {
   cache.set(key, { data, expires: Date.now() + CACHE_TTL });
 }
+
+// Map Duffel cabin class names to Kiwi cabin codes
+const CABIN_MAP: Record<string, string> = {
+  economy: 'M',
+  premium_economy: 'W',
+  business: 'C',
+  first: 'F',
+};
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+
+    // Honeypot: reject bots that fill hidden field
+    if (body.website) {
+      return NextResponse.json({ error: 'Bad request' }, { status: 400 });
+    }
+
     const {
-      slices,
-      passengers,
+      origin,
+      destination,
+      dateFrom,
+      dateTo,
+      adults = 1,
       cabinClass = 'economy',
-      returnOffers = true,
     } = body;
-    if (!slices || !Array.isArray(slices) || slices.length === 0) {
+
+    if (!origin || !destination || !dateFrom) {
       return NextResponse.json(
-        { error: 'slices is required and must be a non-empty array' },
+        { error: 'origin, destination and dateFrom are required' },
         { status: 400 }
       );
     }
-    if (!passengers || !Array.isArray(passengers) || passengers.length === 0) {
-      return NextResponse.json(
-        { error: 'passengers is required and must be a non-empty array' },
-        { status: 400 }
-      );
+
+    const kiwiCabin = CABIN_MAP[cabinClass] ?? 'M';
+
+    const cacheKey = JSON.stringify({ origin, destination, dateFrom, dateTo, adults, cabinClass });
+    const hit = cacheGet(cacheKey);
+    if (hit) {
+      return NextResponse.json({ ...(hit as object), cached: true });
     }
-    const cacheKey = `flight-search:${JSON.stringify({ slices, passengers, cabinClass })}`;
-    const cached = cacheGet(cacheKey);
-    if (cached) {
-      return NextResponse.json({ ...(cached as object), cached: true });
+
+    const params = new URLSearchParams({
+      fly_from: origin.toUpperCase(),
+      fly_to: destination.toUpperCase(),
+      date_from: dateFrom,
+      date_to: dateFrom,
+      curr: 'GBP',
+      sort: 'price',
+      limit: '20',
+      adults: String(adults),
+      selected_cabins: kiwiCabin,
+      partner_market: 'gb',
+      // Enables Virtual Interlining / Hacker Fares automatically
+      // (Kiwi combines separate tickets by default)
+    });
+
+    if (dateTo) {
+      params.set('return_from', dateTo);
+      params.set('return_to', dateTo);
     }
-    const offerRequest = await duffel.offerRequests.create({
-      slices,
-      passengers,
-      cabin_class: cabinClass,
-      return_offers: returnOffers,
-    });
+
+    const res = await fetch(
+      `https://api.tequila.kiwi.com/v2/search?${params.toString()}`,
+      {
+        headers: { apikey: KIWI_KEY },
+        cache: 'no-store',
+      }
+    );
+
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error('[/api/search] Kiwi error', res.status, errText);
+      return NextResponse.json({ error: errText }, { status: res.status });
+    }
+
+    const json = await res.json();
+
+    // Normalise Kiwi response into a shape the UI understands
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const data = offerRequest.data as any;
-    const markup = parseFloat(process.env.MARKUP_PERCENTAGE || '0');
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const results = data.offers?.map((offer: any) => {
-      const base = parseFloat(offer.total_amount);
-      const tax = parseFloat(offer.tax_amount || '0');
-      const baseWithoutTax = base - tax;
-      const markupAmount = parseFloat((base * (markup / 100)).toFixed(2));
-      const totalWithMarkup = (base + markupAmount).toFixed(2);
-      // Extract baggage info from offer passengers
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const baggageInfo = offer.passengers?.map((pax: any) => ({
-        passengerId: pax.id,
-        passengerType: pax.type,
-        cabin_bags: pax.cabin_bag_allowance
-          ? {
-              quantity: pax.cabin_bag_allowance.quantity,
-              max_weight_kg: pax.cabin_bag_allowance.max_weight_kg ?? null,
-              size_restrictions: pax.cabin_bag_allowance.size_restrictions ?? null,
-            }
-          : null,
-        checked_bags: pax.checked_bag_allowance
-          ? {
-              quantity: pax.checked_bag_allowance.quantity,
-              max_weight_kg: pax.checked_bag_allowance.max_weight_kg ?? null,
-              max_overall_weight_kg: pax.checked_bag_allowance.max_overall_weight_kg ?? null,
-            }
-          : null,
-        // Also check segment-level baggages
-        baggages: offer.slices?.flatMap((slice: any) =>
-          slice.segments?.flatMap((seg: any) =>
-            seg.passengers?.find((sp: any) => sp.passenger_id === pax.id)?.baggages ?? []
-          ) ?? []
-        ) ?? [],
-      })) ?? [];
-      // Conditions: refund/change penalties
-      const conditions = offer.conditions ?? {};
-      return {
-        id: offer.id,
-        // Pricing breakdown
-        baseAmount: baseWithoutTax.toFixed(2),   // Duffel base fare (excl. tax)
-        taxAmount: tax.toFixed(2),                // Taxes & carrier charges
-        markupAmount: markupAmount.toFixed(2),    // Our service fee
-        totalAmount: totalWithMarkup,             // Final price shown to customer
-        totalCurrency: offer.total_currency,
-        // Flight data
-        slices: offer.slices,
-        passengers: offer.passengers,
-        owner: offer.owner,
-        expiresAt: offer.expires_at,
-        // Baggage
-        baggageInfo,
-        // Fare conditions
-        conditions: {
-          refundBeforeDeparture: conditions.refund_before_departure ?? null,
-          changeBeforeDeparture: conditions.change_before_departure ?? null,
-        },
-        // Fare class info
-        cabinClass: offer.slices?.[0]?.segments?.[0]?.passengers?.[0]?.cabin_class ?? cabinClass,
-        fareDetailsBySegment: offer.slices?.flatMap((slice: any) =>
-          slice.segments?.map((seg: any) => ({
-            origin: seg.origin?.iata_code,
-            destination: seg.destination?.iata_code,
-            cabin: seg.passengers?.[0]?.cabin_class ?? null,
-            fareBasis: seg.passengers?.[0]?.fare_basis_code ?? null,
-          })) ?? []
-        ) ?? [],
-      };
-    });
-    const response = {
-      offerRequestId: data.id,
-      offers: results,
-      liveMode: data.live_mode,
-      cached: false,
-    };
-    cacheSet(cacheKey, response);
-    return NextResponse.json(response);
+    const flights = (json.data ?? []).map((f: any) => ({
+      id: f.id,
+      price: f.price,
+      currency: json.currency ?? 'GBP',
+      deep_link: f.deep_link,
+      // Kiwi route array — each entry is one flight leg
+      routes: f.route ?? [],
+      duration: f.duration ?? {},
+      flyFrom: f.flyFrom,
+      flyTo: f.flyTo,
+      cityFrom: f.cityFrom,
+      cityTo: f.cityTo,
+      dTime: f.dTime,
+      aTime: f.aTime,
+      dTimeUTC: f.dTimeUTC,
+      aTimeUTC: f.aTimeUTC,
+      nightsInDest: f.nightsInDest ?? null,
+      // Airlines involved (may be multiple for virtual interlining)
+      airlines: Array.from(
+        new Set((f.route ?? []).map((r: any) => r.airline as string))
+      ),
+      // Hacker Fare flag — true when Kiwi combines separate tickets
+      isVirtualInterline: (f.has_airport_change ?? false) || (f.route ?? []).some(
+        (r: any, i: number, arr: any[]) =>
+          i > 0 && r.airline !== arr[i - 1].airline
+      ),
+      baggageInfo: {
+        cabin: f.bags_price ? Object.keys(f.bags_price).length > 0 : false,
+        checked: f.baglimit ?? {},
+      },
+    }));
+
+    const payload = { flights, total: json.data?.length ?? 0, currency: json.currency ?? 'GBP' };
+    cacheSet(cacheKey, payload);
+
+    return NextResponse.json({ ...payload, cached: false });
   } catch (error: unknown) {
     console.error('[/api/search]', error);
     const message = error instanceof Error ? error.message : 'Internal server error';
-    return NextResponse.json(
-      { error: message },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
