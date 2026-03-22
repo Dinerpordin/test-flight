@@ -56,16 +56,68 @@ export async function POST(req: NextRequest) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const results = data.offers?.map((offer: any) => {
       const base = parseFloat(offer.total_amount);
-      const totalWithMarkup = (base * (1 + markup / 100)).toFixed(2);
+      const tax = parseFloat(offer.tax_amount || '0');
+      const baseWithoutTax = base - tax;
+      const markupAmount = parseFloat((base * (markup / 100)).toFixed(2));
+      const totalWithMarkup = (base + markupAmount).toFixed(2);
+      // Extract baggage info from offer passengers
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const baggageInfo = offer.passengers?.map((pax: any) => ({
+        passengerId: pax.id,
+        passengerType: pax.type,
+        cabin_bags: pax.cabin_bag_allowance
+          ? {
+              quantity: pax.cabin_bag_allowance.quantity,
+              max_weight_kg: pax.cabin_bag_allowance.max_weight_kg ?? null,
+              size_restrictions: pax.cabin_bag_allowance.size_restrictions ?? null,
+            }
+          : null,
+        checked_bags: pax.checked_bag_allowance
+          ? {
+              quantity: pax.checked_bag_allowance.quantity,
+              max_weight_kg: pax.checked_bag_allowance.max_weight_kg ?? null,
+              max_overall_weight_kg: pax.checked_bag_allowance.max_overall_weight_kg ?? null,
+            }
+          : null,
+        // Also check segment-level baggages
+        baggages: offer.slices?.flatMap((slice: any) =>
+          slice.segments?.flatMap((seg: any) =>
+            seg.passengers?.find((sp: any) => sp.passenger_id === pax.id)?.baggages ?? []
+          ) ?? []
+        ) ?? [],
+      })) ?? [];
+      // Conditions: refund/change penalties
+      const conditions = offer.conditions ?? {};
       return {
         id: offer.id,
-        totalAmount: totalWithMarkup,
+        // Pricing breakdown
+        baseAmount: baseWithoutTax.toFixed(2),   // Duffel base fare (excl. tax)
+        taxAmount: tax.toFixed(2),                // Taxes & carrier charges
+        markupAmount: markupAmount.toFixed(2),    // Our service fee
+        totalAmount: totalWithMarkup,             // Final price shown to customer
         totalCurrency: offer.total_currency,
+        // Flight data
         slices: offer.slices,
         passengers: offer.passengers,
         owner: offer.owner,
-        conditions: offer.conditions,
         expiresAt: offer.expires_at,
+        // Baggage
+        baggageInfo,
+        // Fare conditions
+        conditions: {
+          refundBeforeDeparture: conditions.refund_before_departure ?? null,
+          changeBeforeDeparture: conditions.change_before_departure ?? null,
+        },
+        // Fare class info
+        cabinClass: offer.slices?.[0]?.segments?.[0]?.passengers?.[0]?.cabin_class ?? cabinClass,
+        fareDetailsBySegment: offer.slices?.flatMap((slice: any) =>
+          slice.segments?.map((seg: any) => ({
+            origin: seg.origin?.iata_code,
+            destination: seg.destination?.iata_code,
+            cabin: seg.passengers?.[0]?.cabin_class ?? null,
+            fareBasis: seg.passengers?.[0]?.fare_basis_code ?? null,
+          })) ?? []
+        ) ?? [],
       };
     });
     const response = {
